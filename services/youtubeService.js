@@ -3,7 +3,7 @@ const axios = require("axios");
 async function fetchYouTubeData(url) {
   try {
     const res = await axios.get(
-      "https://yt1s.ltd/api/ajaxSearch/index",
+      "https://api.vidfly.ai/api/media/youtube/download",
       {
         params: { url },
         headers: {
@@ -11,8 +11,7 @@ async function fetchYouTubeData(url) {
           "content-type": "application/json",
           "x-app-name": "vidfly-web",
           "x-app-version": "1.0.0",
-          Referer: "https://yt1s.ltd/",
-            ",
+          Referer: "https://vidfly.ai/",
         },
       }
     );
