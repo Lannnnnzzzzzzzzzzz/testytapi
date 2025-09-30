@@ -1,29 +1,20 @@
-const { fetchYouTubeAllFormats, fetchSingleDownload } = require("../services/youtubeService");
 
-async function getYouTubeDownload(req, res) {
-  const { url } = req.query;
-  if (!url) return res.status(400).json({ error: "Missing url param" });
+const { fetchYouTubeData } = require("../services/youtubeService");
 
+async function handleYouTubeDownload(req, res) {
   try {
-    const data = await fetchYouTubeAllFormats(url);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { url } = req.query;
+    if (!url) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing 'url' query parameter." });
+    }
+
+    const data = await fetchYouTubeData(url);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 }
 
-async function proxyDownload(req, res) {
-  const { url, ftype = "mp4", fquality = "720" } = req.query;
-  if (!url) return res.status(400).json({ error: "Missing url param" });
-
-  try {
-    const downloadUrl = await fetchSingleDownload(url, ftype, fquality);
-    const response = await require("axios").get(downloadUrl, { responseType: "stream" });
-    res.setHeader("Content-Disposition", `attachment; filename=video.${ftype}`);
-    response.data.pipe(res);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-module.exports = { getYouTubeDownload, proxyDownload };
+module.exports = { handleYouTubeDownload };
