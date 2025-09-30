@@ -1,8 +1,8 @@
+
 const express = require("express");
 const router = express.Router();
-const { getYouTubeDownload, proxyDownload } = require("../controllers/youtubeController");
+const { handleYouTubeDownload } = require("../controllers/youtubeController");
 
-router.get("/download", getYouTubeDownload);
-router.get("/proxy", proxyDownload);
+router.get("/download", handleYouTubeDownload);
 
 module.exports = router;
