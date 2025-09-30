@@ -1,105 +1,41 @@
 const axios = require("axios");
-const qs = require("qs");
 
-// =====================
-// Ambil semua format mp4/mp3
-// =====================
-async function fetchYouTubeAllFormats(url) {
+async function fetchYouTubeData(url) {
   try {
-    // Hapus query string supaya yt1s tidak error 404
-    const cleanUrl = url.split("?")[0];
-
-    const searchRes = await axios.post(
+    const res = await axios.get(
       "https://yt1s.ltd/api/ajaxSearch/index",
-      qs.stringify({ q: cleanUrl, vt: "home" }),
-      { headers: getHeaders() }
+      {
+        params: { url },
+        headers: {
+          accept: "*/*",
+          "content-type": "application/json",
+          "x-app-name": "vidfly-web",
+          "x-app-version": "1.0.0",
+          Referer: "https://yt1s.ltd/
+            ",
+        },
+      }
     );
 
-    const videoId = searchRes.data.vid;
-    const k = searchRes.data.k;
-    const title = searchRes.data.title;
-    const thumbnail = searchRes.data.thumb;
-
-    if (!videoId || !k) throw new Error("Video not found");
-
-    const mp4Qualities = ["360", "480", "720", "1080"];
-    const mp3Qualities = ["128"];
-    const formats = [];
-
-    const mp4Promises = mp4Qualities.map(async (q) => await getDlink(videoId, k, "mp4", q));
-    const mp3Promises = mp3Qualities.map(async (q) => await getDlink(videoId, k, "mp3", q));
-
-    const allResults = await Promise.all([...mp4Promises, ...mp3Promises]);
-    allResults.forEach(f => f && formats.push(f));
-
-    return { title, thumbnail, formats };
-  } catch (err) {
-    throw new Error(`YouTube service failed: ${err.message}`);
-  }
-}
-
-// =====================
-// Ambil single download URL (proxy)
-// =====================
-async function fetchSingleDownload(url, ftype, fquality) {
-  const cleanUrl = url.split("?")[0]; // hapus query string
-
-  const searchRes = await axios.post(
-    "https://yt1s.ltd/api/ajaxSearch/index",
-    qs.stringify({ q: cleanUrl, vt: "home" }),
-    { headers: getHeaders() }
-  );
-
-  const videoId = searchRes.data.vid;
-  const k = searchRes.data.k;
-
-  const conv = await axios.post(
-    "https://yt1s.ltd/api/ajaxConvert/convert",
-    qs.stringify({ vid: videoId, k, ftype, fquality }),
-    { headers: getHeaders() }
-  );
-
-  if (!conv.data.dlink) throw new Error("Download link not found");
-  return conv.data.dlink;
-}
-
-// =====================
-// Headers helper
-// =====================
-function getHeaders() {
-  return {
-    accept: "*/*",
-    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-    "user-agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
-    Referer: "https://yt1s.ltd/",
-    "x-requested-with": "XMLHttpRequest",
-  };
-}
-
-// =====================
-// Ambil dlink tiap kualitas
-// =====================
-async function getDlink(videoId, k, ftype, fquality) {
-  try {
-    const conv = await axios.post(
-      "https://yt1s.ltd/api/ajaxConvert/convert",
-      qs.stringify({ vid: videoId, k, ftype, fquality }),
-      { headers: getHeaders() }
-    );
-
-    if (conv.data.dlink) {
-      return {
-        type: ftype === "mp3" ? "audio" : "video",
-        quality: ftype === "mp4" ? fquality + "p" : fquality + "kbps",
-        extension: ftype,
-        url: `/api/youtube/proxy?url=${encodeURIComponent(`https://youtu.be/${videoId}`)}&ftype=${ftype}&fquality=${fquality}`
-      };
+    const data = res.data?.data;
+    if (!data || !data.items || !data.title) {
+      throw new Error("Invalid or empty response from YouTube downloader API");
     }
+
+    return {
+      title: data.title,
+      thumbnail: data.cover,
+      duration: data.duration,
+      formats: data.items.map((item) => ({
+        type: item.type,
+        quality: item.label || "unknown",
+        extension: item.ext || item.extension || "unknown",
+        url: item.url,
+      })),
+    };
   } catch (err) {
-    // jika gagal ambil satu kualitas, abaikan tapi jangan crash
+    throw new Error(`YouTube downloader request failed: ${err.message}`);
   }
-  return null;
 }
 
-module.exports = { fetchYouTubeAllFormats, fetchSingleDownload };
+module.exports = { fetchYouTubeData };
