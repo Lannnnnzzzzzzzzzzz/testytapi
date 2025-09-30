@@ -11,7 +11,7 @@ async function fetchYouTubeData(url) {
           "content-type": "application/json",
           "x-app-name": "vidfly-web",
           "x-app-version": "1.0.0",
-          Referer: "https://yt1s.ltd/"
+          Referer: "https://yt1s.ltd/",
             ",
         },
       }
