@@ -1,11 +1,17 @@
 const axios = require("axios");
 const qs = require("qs");
 
+// =====================
+// Ambil semua format mp4/mp3
+// =====================
 async function fetchYouTubeAllFormats(url) {
   try {
+    // Hapus query string supaya yt1s tidak error 404
+    const cleanUrl = url.split("?")[0];
+
     const searchRes = await axios.post(
       "https://yt1s.ltd/api/ajaxSearch/index",
-      qs.stringify({ q: url, vt: "home" }),
+      qs.stringify({ q: cleanUrl, vt: "home" }),
       { headers: getHeaders() }
     );
 
@@ -32,10 +38,15 @@ async function fetchYouTubeAllFormats(url) {
   }
 }
 
+// =====================
+// Ambil single download URL (proxy)
+// =====================
 async function fetchSingleDownload(url, ftype, fquality) {
+  const cleanUrl = url.split("?")[0]; // hapus query string
+
   const searchRes = await axios.post(
     "https://yt1s.ltd/api/ajaxSearch/index",
-    qs.stringify({ q: url, vt: "home" }),
+    qs.stringify({ q: cleanUrl, vt: "home" }),
     { headers: getHeaders() }
   );
 
@@ -52,6 +63,9 @@ async function fetchSingleDownload(url, ftype, fquality) {
   return conv.data.dlink;
 }
 
+// =====================
+// Headers helper
+// =====================
 function getHeaders() {
   return {
     accept: "*/*",
@@ -63,6 +77,9 @@ function getHeaders() {
   };
 }
 
+// =====================
+// Ambil dlink tiap kualitas
+// =====================
 async function getDlink(videoId, k, ftype, fquality) {
   try {
     const conv = await axios.post(
@@ -70,6 +87,7 @@ async function getDlink(videoId, k, ftype, fquality) {
       qs.stringify({ vid: videoId, k, ftype, fquality }),
       { headers: getHeaders() }
     );
+
     if (conv.data.dlink) {
       return {
         type: ftype === "mp3" ? "audio" : "video",
@@ -78,7 +96,9 @@ async function getDlink(videoId, k, ftype, fquality) {
         url: `/api/youtube/proxy?url=${encodeURIComponent(`https://youtu.be/${videoId}`)}&ftype=${ftype}&fquality=${fquality}`
       };
     }
-  } catch {}
+  } catch (err) {
+    // jika gagal ambil satu kualitas, abaikan tapi jangan crash
+  }
   return null;
 }
 
